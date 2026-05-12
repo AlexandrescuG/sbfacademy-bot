@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <title>Админ-панель - Пользователи</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .nav { margin-bottom: 20px; }
+            .nav a { margin-right: 10px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        </style>
+    </head>
+    <body>
+        <div class="nav">
+            <a href="/admin/dashboard">Панель управления</a>
+            <a href="/admin/users">Пользователи</a>
+            <a href="/admin/broadcast">Рассылка</a>
+            <a href="/admin/convert">Конвертация файлов</a>
+            <a href="/admin/logout">Выход</a>
+        </div>
+        <h2>Пользователи</h2>
+        <table>
+            <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Имя</th>
+                <th>Телефон</th>
+                <th>Первый запуск</th>
+                <th>Последняя активность</th>
+            </tr>
+            {% for user in users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] or 'None' }}</td>
+                <td>{{ user[2] or 'None' }}</td>
+                <td>{{ user[3] or 'None' }}</td>
+                <td>{{ user[4] }}</td>
+                <td>{{ user[5] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>

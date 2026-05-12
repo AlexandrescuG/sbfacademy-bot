@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <title>Админ-панель - Конвертация файлов</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .nav { margin-bottom: 20px; }
+            .nav a { margin-right: 10px; }
+            form { width: 300px; }
+            input[type="file"] { margin: 10px 0; }
+            button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; }
+            .error { color: red; }
+            .success { color: green; }
+        </style>
+        <script>
+            function convertFile() {
+                const formData = new FormData(document.getElementById("convert-form"));
+                fetch("/admin/convert", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        document.getElementById("result").innerHTML = `<p class="success">${data.message}</p>`;
+                    } else {
+                        document.getElementById("result").innerHTML = `<p class="error">${data.message}</p>`;
+                    }
+                })
+                .catch(error => document.getElementById("result").innerHTML = `<p class="error">Ошибка: ${error}</p>`);
+            }
+        </script>
+    </head>
+    <body>
+        <div class="nav">
+            <a href="/admin/dashboard">Панель управления</a>
+            <a href="/admin/users">Пользователи</a>
+            <a href="/admin/broadcast">Рассылка</a>
+            <a href="/admin/convert">Конвертация файлов</a>
+            <a href="/admin/logout">Выход</a>
+        </div>
+        <h2>Конвертация .txt в .env</h2>
+        <form id="convert-form" onsubmit="event.preventDefault(); convertFile();">
+            <input type="file" name="file" accept=".txt" required>
+            <button type="submit">Конвертировать</button>
+        </form>
+        <div id="result"></div>
+    </body>
+</html>

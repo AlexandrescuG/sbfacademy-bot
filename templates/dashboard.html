@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <title>Админ-панель - Панель управления</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .nav { margin-bottom: 20px; }
+            .nav a { margin-right: 10px; }
+            .stats { border: 1px solid #ccc; padding: 20px; border-radius: 5px; }
+        </style>
+    </head>
+    <body>
+        <div class="nav">
+            <a href="/admin/dashboard">Панель управления</a>
+            <a href="/admin/users">Пользователи</a>
+            <a href="/admin/broadcast">Рассылка</a>
+            <a href="/admin/convert">Конвертация файлов</a>
+            <a href="/admin/logout">Выход</a>
+        </div>
+        <div class="stats">
+            <h2>Статистика</h2>
+            <p>Всего пользователей: {{ total_users }}</p>
+            <p>Запусков бота сегодня: {{ daily_starts }}</p>
+            <p>Сообщений сегодня: {{ daily_messages }}</p>
+            <p>Команд сегодня: {{ daily_commands }}</p>
+        </div>
+    </body>
+</html>

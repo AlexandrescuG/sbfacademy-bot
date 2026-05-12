@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <title>Админ-панель - Рассылка</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .nav { margin-bottom: 20px; }
+            .nav a { margin-right: 10px; }
+            form { width: 300px; }
+            textarea { width: 100%; height: 100px; margin: 10px 0; }
+            button { padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; }
+        </style>
+        <script>
+            function sendBroadcast() {
+                const message = document.getElementById("message").value;
+                fetch("/admin/broadcast", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: "message=" + encodeURIComponent(message)
+                })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(error => alert("Ошибка: " + error));
+            }
+        </script>
+    </head>
+    <body>
+        <div class="nav">
+            <a href="/admin/dashboard">Панель управления</a>
+            <a href="/admin/users">Пользователи</a>
+            <a href="/admin/broadcast">Рассылка</a>
+            <a href="/admin/convert">Конвертация файлов</a>
+            <a href="/admin/logout">Выход</a>
+        </div>
+        <h2>Рассылка сообщений</h2>
+        <form onsubmit="event.preventDefault(); sendBroadcast();">
+            <textarea id="message" name="message" placeholder="Введите сообщение для рассылки" required></textarea>
+            <button type="submit">Отправить</button>
+        </form>
+    </body>
+</html>

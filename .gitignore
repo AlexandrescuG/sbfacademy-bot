@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Секреты
+.env
+Flask.env
+
+# База данных
+*.db
+*.sqlite
+
+# Сессии
+*.session
+
+# Логи
+*.log
+/tmp/
+
+# Документы (тяжёлые)
+*.pdf
