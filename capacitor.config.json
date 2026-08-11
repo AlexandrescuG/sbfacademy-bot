@@ -1,0 +1,16 @@
+{
+  "appId": "com.sbfconsult.academy",
+  "appName": "SBF Academy",
+  "webDir": "webapp",
+  "android": {
+    "minWebViewVersion": 60
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

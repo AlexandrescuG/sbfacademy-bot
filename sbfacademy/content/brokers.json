@@ -1,0 +1,68 @@
+[
+  {
+    "id": "avatrade",
+    "name": "AvaTrade",
+    "leverage": "1:400",
+    "platforms": "MT4, MT5",
+    "spread": "от 0.9 пунктов",
+    "bonus": "10%–20%",
+    "deposit_methods": "Банк. карты, Skrill, Neteller, PerfectMoney",
+    "description": "Надёжный международный брокер с широким выбором инструментов. Стабильный доступ к рынкам и высокий уровень сервиса.",
+    "url": "https://avatrade.com/?tag=184200&utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  },
+  {
+    "id": "daoti",
+    "name": "Daoti",
+    "leverage": "1:100",
+    "platforms": "MT5",
+    "spread": "от 0.7 пунктов",
+    "bonus": "до 15% на баланс",
+    "deposit_methods": "Банк. карта, крипто-переводы",
+    "description": "Современный брокер с низкими спредами и быстрым исполнением. Оптимален для крипты и классических активов.",
+    "url": "https://daoti.io/?utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  },
+  {
+    "id": "fxpro",
+    "name": "FxPro",
+    "leverage": "1:500",
+    "platforms": "MT4, MT5, cTrader",
+    "spread": "от 1.2 пунктов",
+    "bonus": "—",
+    "deposit_methods": "Карты, Skrill, Neteller, PayPal, Крипто",
+    "description": "Профессиональная среда исполнения сделок. Высокая ликвидность и доступ к инновационным платформам.",
+    "url": "https://direct-fxpro.com/en/partner/32TQQFd7H?utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  },
+  {
+    "id": "capex",
+    "name": "Capex",
+    "leverage": "1:400",
+    "platforms": "WebTrader, MT5",
+    "spread": "от 1.2 пунктов",
+    "bonus": "20%–40%",
+    "deposit_methods": "Карта, Skrill, Neteller, Перевод",
+    "description": "Лицензированный брокер с уникальным веб-терминалом. Прозрачные условия и качественная аналитика.",
+    "url": "https://account.capex.com/en/register?sidc=88EA29D5-46D9-472E-AEB2-C6E5C30E822A&utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  },
+  {
+    "id": "instaforex",
+    "name": "Instaforex",
+    "leverage": "1:1000",
+    "platforms": "MT4, MT5, Tick",
+    "spread": "0.0–3.0 пунктов",
+    "bonus": "30%, 55%, 100%",
+    "deposit_methods": "Карты, Skrill, Neteller, PM, Крипто",
+    "description": "Лидер рынка по бонусным программам. Уникальные технологии и ликвидность для любых стратегий.",
+    "url": "https://www.instaforex.com/en/fast_open_live_account?x=TTVDG&utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  },
+  {
+    "id": "alpari",
+    "name": "Alpari",
+    "leverage": "1:3000",
+    "platforms": "MT4, MT5",
+    "spread": "от 1.0 пунктов",
+    "bonus": "—",
+    "deposit_methods": "Банк. карта, банк. перевод",
+    "description": "Брокер с колоссальным опытом. Самое высокое плечо на рынке — максимальная гибкость управления капиталом.",
+    "url": "https://alpari.com/en/?utm_source=tgbot&utm_medium=bot&utm_campaign=sbfacademy"
+  }
+]

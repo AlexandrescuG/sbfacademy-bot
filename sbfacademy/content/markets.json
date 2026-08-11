@@ -1,0 +1,64 @@
+[
+  { "asset": "SPY",    "name": "S&P 500",                   "market": "global", "region": "us" },
+  { "asset": "QQQ",    "name": "Nasdaq 100",                "market": "global", "region": "us" },
+  { "asset": "DIA",    "name": "Dow Jones",                 "market": "global", "region": "us" },
+  { "asset": "IWM",    "name": "Russell 2000",              "market": "global", "region": "us" },
+  { "asset": "NVDA",   "name": "NVIDIA",                    "market": "global", "region": "us" },
+  { "asset": "TSLA",   "name": "Tesla",                     "market": "global", "region": "us" },
+  { "asset": "AAPL",   "name": "Apple",                     "market": "global", "region": "us" },
+  { "asset": "META",   "name": "Meta",                      "market": "global", "region": "us" },
+
+  { "asset": "DAX",    "name": "DAX (Германия)",            "market": "global", "region": "eu" },
+  { "asset": "FTSE",   "name": "FTSE 100 (UK)",             "market": "global", "region": "eu" },
+  { "asset": "CAC40",  "name": "CAC 40 (Франция)",          "market": "global", "region": "eu" },
+  { "asset": "IBEX",   "name": "IBEX 35 (Испания)",         "market": "global", "region": "eu" },
+
+  { "asset": "NKY",    "name": "Nikkei 225 (Япония)",       "market": "global", "region": "asia" },
+  { "asset": "HSI",    "name": "Hang Seng (Гонконг)",       "market": "global", "region": "asia" },
+  { "asset": "SHCOMP", "name": "Shanghai Composite",        "market": "global", "region": "asia" },
+  { "asset": "NIFTY",  "name": "Nifty 50 (Индия)",         "market": "global", "region": "asia" },
+  { "asset": "ASX200", "name": "ASX 200 (Австралия)",       "market": "global", "region": "asia" },
+
+  { "asset": "EWZ",    "name": "Бразилия ETF",              "market": "global", "region": "em" },
+  { "asset": "BIST",   "name": "BIST 100 (Турция)",         "market": "global", "region": "em" },
+  { "asset": "MOEX",   "name": "Мосбиржа (Россия)",         "market": "global", "region": "em" },
+
+  { "asset": "KASE",   "name": "KASE (Казахстан)",          "market": "kz",     "region": "kz" },
+  { "asset": "USDKZT", "name": "Доллар / Тенге",            "market": "kz",     "region": "kz" },
+  { "asset": "EURKZT", "name": "Евро / Тенге",              "market": "kz",     "region": "kz" },
+  { "asset": "RUBKZT", "name": "Рубль / Тенге",             "market": "kz",     "region": "kz" },
+  { "asset": "KMG",    "name": "КазМунайГаз",               "market": "kz",     "region": "kz" },
+  { "asset": "HSBK",   "name": "Халык Банк",                "market": "kz",     "region": "kz" },
+
+  { "asset": "JSE",    "name": "JSE All Share (ЮАР)",       "market": "za",     "region": "za" },
+  { "asset": "USDZAR", "name": "Доллар / Рэнд",             "market": "za",     "region": "za" },
+  { "asset": "NPN",    "name": "Naspers",                   "market": "za",     "region": "za" },
+  { "asset": "MTN",    "name": "MTN Group",                 "market": "za",     "region": "za" },
+  { "asset": "SOL",    "name": "Sasol",                     "market": "za",     "region": "za" },
+  { "asset": "FSR",    "name": "FirstRand",                 "market": "za",     "region": "za" },
+
+  { "asset": "EURUSD", "name": "EUR/USD",                   "market": "global", "region": "fx" },
+  { "asset": "GBPUSD", "name": "GBP/USD",                   "market": "global", "region": "fx" },
+  { "asset": "USDJPY", "name": "USD/JPY",                   "market": "global", "region": "fx" },
+  { "asset": "USDCHF", "name": "USD/CHF",                   "market": "global", "region": "fx" },
+  { "asset": "AUDUSD", "name": "AUD/USD",                   "market": "global", "region": "fx" },
+  { "asset": "USDCAD", "name": "USD/CAD",                   "market": "global", "region": "fx" },
+
+  { "asset": "GLD",    "name": "Золото",                    "market": "global", "region": "commodity" },
+  { "asset": "SLV",    "name": "Серебро",                   "market": "global", "region": "commodity" },
+  { "asset": "COPPER", "name": "Медь",                      "market": "global", "region": "commodity" },
+  { "asset": "BRENT",  "name": "Нефть Brent",               "market": "global", "region": "commodity" },
+  { "asset": "WTI",    "name": "Нефть WTI",                 "market": "global", "region": "commodity" },
+  { "asset": "NGAS",   "name": "Природный газ",             "market": "global", "region": "commodity" },
+  { "asset": "WHEAT",  "name": "Пшеница",                   "market": "global", "region": "commodity" },
+
+  { "asset": "BTC",    "name": "Bitcoin",                   "market": "global", "region": "crypto" },
+  { "asset": "ETH",    "name": "Ethereum",                  "market": "global", "region": "crypto" },
+  { "asset": "BNB",    "name": "BNB",                       "market": "global", "region": "crypto" },
+  { "asset": "SOLANA", "name": "Solana",                    "market": "global", "region": "crypto" },
+  { "asset": "MSTR",   "name": "MicroStrategy (BTC-прокси)", "market": "global", "region": "crypto" },
+
+  { "asset": "VIX",    "name": "VIX (индекс страха)",       "market": "global", "region": "macro" },
+  { "asset": "TLT",    "name": "US Treasury 20Y ETF",       "market": "global", "region": "macro" },
+  { "asset": "DXY",    "name": "Индекс доллара (DXY)",      "market": "global", "region": "macro" }
+]

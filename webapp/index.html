@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FBF6EF">
+  <meta name="color-scheme" content="light">
+  <title>SBF Academy</title>
+  <meta name="description" content="Утренний обзор рынка, дневник трейдера, обучение и инструменты. SBF Company SRL.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SBF Academy — утренний обзор рынка">
+  <meta property="og:description" content="Сжатый обзор рынка каждое утро, дневник трейдера, обучение и инструменты.">
+  <meta property="og:image" content="https://web.sbfconsult.com/og.png">
+  <meta property="og:url" content="https://web.sbfconsult.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Critical inline CSS — гарантирует кремовый фон сразу */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;background:#FBF6EF;color:#2B2B33;
+      font-family:Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    #app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;background:#FBF6EF}
+    .screen{display:none;flex-direction:column;flex:1;overflow-y:auto;padding-bottom:62px}
+    .screen.active{display:flex}
+    #screen-splash{align-items:center;justify-content:center}
+    .splash-logo{text-align:center;margin-bottom:40px}
+    .logo-mark{font-size:48px;font-weight:900;letter-spacing:4px;color:#C9A227}
+    .logo-sub{font-size:12px;letter-spacing:8px;color:#B0A898;margin-top:4px}
+    .spinner{width:32px;height:32px;border:3px solid #E7DFCF;border-top-color:#C9A227;
+      border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+  <link rel="stylesheet" href="styles.css?v=22">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="i18n.js?v=1" defer></script>
+  <script src="app.js?v=27" defer></script>
+</head>
+<body>
+  <div id="app">
+    <div id="screen-splash" class="screen active">
+      <div class="splash-logo">
+        <div class="logo-mark">SBF</div>
+        <div class="logo-sub">ACADEMY</div>
+      </div>
+      <div class="spinner"></div>
+    </div>
+  </div>
+</body>
+</html>

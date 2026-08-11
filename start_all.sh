@@ -1,0 +1,1 @@
+/mnt/sbfdata/sbf-platform/start_all.sh

@@ -1,23 +1,50 @@
-# Python
-__pycache__/
-*.py[cod]
-venv/
-.venv/
-
-# Секреты
+# Secrets — никогда не коммитить
 .env
 Flask.env
+*.env
+!env.example
 
-# База данных
+# Данные и логи
 *.db
 *.sqlite
-
-# Сессии
-*.session
-
-# Логи
 *.log
-/tmp/
+logs/
 
-# Документы (тяжёлые)
-*.pdf
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Node / Capacitor
+node_modules/
+
+# Android (Capacitor native project)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+*.keystore
+*.jks
+
+# iOS (Capacitor native project)
+ios/App/Pods/
+ios/App/build/
+ios/App/App.xcworkspace/xcuserdata/
+*.p8
+*.p12
+*.mobileprovision
+
+# Firebase client config (не секрет, но добавляется отдельно при настройке)
+google-services.json
+GoogleService-Info.plist
+
+# Editor junk
+*.swp
+*.kate-swp
+
+# SQLite WAL/SHM — содержат данные пользователей
+*.db-shm
+*.db-wal
+*.swp
+*.kate-swp

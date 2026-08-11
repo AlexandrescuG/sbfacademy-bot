@@ -1,9 +1,13 @@
 import logging
 import os
+import re
 import sqlite3
 from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ChatMember
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes, ConversationHandler
+from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup,
+                       ReplyKeyboardMarkup, KeyboardButton, ChatMember,
+                       WebAppInfo, MenuButtonWebApp, BotCommand)
+from telegram.ext import (Application, CommandHandler, MessageHandler,
+                           CallbackQueryHandler, filters, ContextTypes, ConversationHandler)
 from flask import Flask, redirect, url_for, session, jsonify, request
 import threading
 import hashlib
@@ -18,7 +22,7 @@ load_dotenv()
 BOT_TOKEN        = os.getenv("BOT_TOKEN", "ЗАМЕНИТЕ_В_.env")
 ADMIN_PASSWORD   = os.getenv("ADMIN_PASSWORD", "admin123")
 MANAGER_CHAT_ID  = int(os.getenv("MANAGER_CHAT_ID", "0"))
-LEADS_CHANNEL_ID = int(os.getenv("LEADS_CHANNEL_ID", "-1003582149393"))
+LEADS_CHANNEL_ID = int(os.getenv("LEADS_CHANNEL_ID", "-1001234567890"))
 ADMIN_IDS        = [int(x) for x in os.getenv("ADMIN_IDS", "123456789").split(",") if x.strip()]
 ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
 OPERATOR_IDS = [int(x) for x in os.getenv("OPERATOR_IDS", "").split(",") if x.strip()]
@@ -36,6 +40,10 @@ BRAND_TAGLINE    = "🎓 *SBF Academy* — обучение трейдингу �
 
 # ─── ФАЙЛЫ ─────────────────────────────────────────────────────────────────────
 PERFORMANCE_PDF  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SBF_Performance_2.pdf")
+
+# ─── MINI APP ──────────────────────────────────────────────────────────────────
+# Phase 2: заменить на реальный URL после деплоя FastAPI + webapp/
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://sbfconsult.com")
 
 # ─── ДАННЫЕ БРОКЕРОВ ───────────────────────────────────────────────────────────
 BROKERS = {
@@ -105,7 +113,26 @@ BROKERS = {
 ONBOARD_Q1, ONBOARD_Q2, ONBOARD_Q3, ONBOARD_DONE = range(4)
 
 # ─── ЛОГИРОВАНИЕ ──────────────────────────────────────────────────────────────
+# httpx/httpcore логируют URL каждого запроса на INFO — а Telegram Bot API
+# кладёт токен прямо в URL (https://api.telegram.org/bot<TOKEN>/method), поэтому
+# без этого токен открытым текстом уходит в bot.log на каждый вызов API.
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
+for _noisy in ("httpx", "httpcore"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
+
+
+class _RedactTokenFilter(logging.Filter):
+    _TOKEN_RE = re.compile(r"bot\d{6,}:[A-Za-z0-9_\-]{20,}")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.msg, str):
+            record.msg = self._TOKEN_RE.sub("bot<REDACTED>", record.msg)
+        return True
+
+
+for _h in logging.getLogger().handlers:
+    _h.addFilter(_RedactTokenFilter())
+
 logger = logging.getLogger(__name__)
 app_telegram = None
 app = Flask(__name__)
@@ -257,12 +284,22 @@ def subscription_required_keyboard():
 
 
 # ─── КЛАВИАТУРЫ ────────────────────────────────────────────────────────────────
-REPLY_KEYBOARD = ReplyKeyboardMarkup(
-    [[KeyboardButton("Меню"), KeyboardButton("Поделиться номером", request_contact=True)]],
-    resize_keyboard=True, one_time_keyboard=False
-)
+
+def main_reply_keyboard() -> ReplyKeyboardMarkup:
+    """Персистентная клавиатура внизу экрана — доступна через стрелку у поля ввода."""
+    return ReplyKeyboardMarkup([
+        [KeyboardButton("🚀 Открыть приложение", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [KeyboardButton("📊 Обзор рынка"),       KeyboardButton("📚 Образование")],
+        [KeyboardButton("🏦 Брокеры"),           KeyboardButton("🔢 Калькулятор риска")],
+        [KeyboardButton("📖 Словарь"),           KeyboardButton("📡 Каналы")],
+        [KeyboardButton("🏢 О нас"),             KeyboardButton("❓ FAQ")],
+    ], resize_keyboard=True, one_time_keyboard=False)
+
+# ── устаревшая переменная — оставить для совместимости с notify_lead и т.д. ──
+REPLY_KEYBOARD = main_reply_keyboard()
 
 def main_menu_keyboard():
+    """Inline-клавиатура для глубокой навигации из callback-хендлеров."""
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📊 Результаты торговли",  callback_data="performance_hook"),
          InlineKeyboardButton("📚 Образование",          callback_data="edu_materials")],
@@ -363,69 +400,6 @@ GLOSSARY = {
     "var": "📌 *VaR (Value at Risk)* — статистическая мера максимального убытка за период при заданной вероятности.",
 }
 
-# ─── УРОКИ ДНЯ ─────────────────────────────────────────────────────────────────
-DAILY_LESSONS = [
-    "💡 *Урок дня:* Никогда не рискуйте более 1–2% депозита в одной сделке. Это правило сохранило капитал тысячам трейдеров.",
-    "💡 *Урок дня:* Тренд — ваш друг. Торгуйте по тренду, а не против него. «Не лови ножи» — базовый принцип выживания на рынке.",
-    "💡 *Урок дня:* Стоп-лосс — это не слабость, а профессионализм. Лучший трейдер умеет управлять потерями.",
-    "💡 *Урок дня:* Дневник трейдера — обязательный инструмент. Записывайте каждую сделку: вход, выход, причину, эмоции.",
-    "💡 *Урок дня:* Демо-счёт — не пустая трата времени. Отработайте стратегию минимум месяц, прежде чем рисковать реальными деньгами.",
-    "💡 *Урок дня:* Жадность убивает депозиты. Зафиксированная прибыль — это настоящая прибыль.",
-    "💡 *Урок дня:* EUR/USD и USD/CHF движутся противоположно. Открывать обе в одну сторону — удваивать риск, а не диверсифицировать.",
-    "💡 *Урок дня:* Новостные события (NFP, заседания ФРС) вызывают резкие движения. Без опыта торговли на новостях — лучше закройте позиции заранее.",
-    "💡 *Урок дня:* Соотношение риск/прибыль должно быть минимум 1:2. На каждый доллар риска — минимум два в прибыли.",
-    "💡 *Урок дня:* Психология — 80% успеха в трейдинге. Дисциплина и контроль эмоций важнее любой стратегии.",
-    "💡 *Урок дня:* Поддержка и сопротивление — фундамент технического анализа. Цена всегда помнит ключевые уровни.",
-    "💡 *Урок дня:* Не торгуйте на все деньги. Держите часть депозита свободной — для новых возможностей.",
-    "💡 *Урок дня:* Таймфрейм определяет стиль. M1–M15 для скальпинга, H1–H4 для интрадея, D1+ для свинга.",
-    "💡 *Урок дня:* MA50 и MA200 — ориентиры профессионалов по всему миру. Цена выше MA200 — бычий рынок.",
-    "💡 *Урок дня:* Диверсификация снижает риск. Не вкладывайте всё в один актив — распределяйте по инструментам.",
-    "💡 *Урок дня:* Открывайте сделку только при наличии чёткого торгового плана. Спонтанные решения — прямой путь к потере депозита.",
-    "💡 *Урок дня:* Усреднение убыточной позиции чаще всего приводит к маржин-коллу. Признайте ошибку и закройте сделку. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Цена всегда стремится к зонам ликвидности. Стопы розничных трейдеров за локальными экстремумами выступают топливом для крупных игроков.",
-    "💡 *Урок дня:* Рынок не знает о вашем существовании. Не пытайтесь ему отомстить после серии убытков — возьмите паузу. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Торгуя пробои уровней, дожидайтесь закрепления свечи за ним. Ложные пробои (свипы) собирают ликвидность и возвращают цену в диапазон.",
-    "💡 *Урок дня:* Имбаланс (FVG) на старшем таймфрейме работает как магнит для цены. Рынок всегда стремится перекрыть неэффективное ценообразование. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Переторговка (overtrading) истощает и депозит, и нервы. 2-3 качественные сделки в неделю лучше, чем 20 импульсивных в день.",
-    "💡 *Урок дня:* Дивергенция на осцилляторах (RSI, MACD) — отличный ранний сигнал затухания тренда, но не повод для немедленного входа против него. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Смена характера рынка (ChoCh) валидна только после съема ликвидности. В противном случае это просто коррекция внутри структуры.",
-    "💡 *Урок дня:* Никогда не передвигайте стоп-лосс в сторону увеличения убытка. Установленный стоп — это броня вашего капитала. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Обращайте внимание на объемы вблизи уровней поддержки и сопротивления. Истинный пробой всегда сопровождается всплеском объема.",
-    "💡 *Урок дня:* Индекс доллара (DXY) имеет обратную корреляцию с золотом и евро. Анализ DXY обязателен при торговле мажорами. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Синдром упущенной выгоды (FOMO) заставляет покупать на пиках и продавать на дне. Ушел поезд — ждите следующий сетап.",
-    "💡 *Урок дня:* Уровни Фибоначчи лучше всего работают в связке с зонами П/С. Золотое сечение (0.618) — сильный магнит для завершения коррекций. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Ордерблок (OB) валиден только в том случае, если он привел к слому структуры (BOS) и оставил за собой зону имбаланса.",
-    "💡 *Урок дня:* В пятницу вечером ликвидность падает, а спреды расширяются. Оставлять сделки на выходные — это всегда риск случайного гэпа. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 Урок дня: Скользящие средние показывают направление тренда, но запаздывают. Используйте их как динамические уровни, а не как первый сигнал на вход.",
-    "💡 *Урок дня:* Сессионная ликвидность имеет решающее значение. Азиатский рендж часто выступает пулом ликвидности, который снимается на открытии Лондона. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Не слушайте инсайдеров из интернета. Единственная правда на рынке — это график цены и ваш строгий риск-менеджмент.",
-    "💡 *Урок дня:* Пин-бар на графике — это еще не разворот. Подтверждением служит только следующая свеча, закрывшаяся в направлении длинной тени. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Межрыночный анализ помогает предвидеть движения. Рост доходности казначейских облигаций США обычно давит на золото и крипторынок.",
-    "💡 *Урок дня:* Успех в трейдинге — это марафон, а не спринт. Сосредоточьтесь на выживании капитала в первый год, а не на сверхприбылях. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Торговля в узкой консолидации (флэте) съедает депозит стопами. Ждите импульсного выхода и торгуйте его ретест.",
-    "💡 *Урок дня:* Индикатор профиля рынка (Volume Profile) показывает уровни с наибольшим проторгованным объемом (POC). Цена часто возвращается к ним. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Ваше рабочее место должно быть свободно от отвлекающих факторов. Трейдинг требует абсолютной концентрации и фокуса в моменте.",
-    "💡 *Урок дня:* Гэпы на фондовом и валютном рынке в большинстве случаев перекрываются. Эту закономерность можно использовать для краткосрочных позиций. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Накопление по Вайкоффу требует финального подтверждения в виде Spring (ложного пробоя минимума). Только после него начинается фаза агрессивного роста.",
-    "💡 *Урок дня:* Идеальных точек входа не существует. Ждать подтверждения на всех таймфреймах сразу — значит пропускать лучшие движения рынка. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Использование мультитаймфреймного анализа обязательно. Смотрите тренд на D1, ищите зону интереса на H1, входите в сделку на M15.",
-    "💡 *Урок дня:* Корреляция криптовалют с индексами S&P 500 и Nasdaq часто подсказывает, куда пойдет биткоин. Риск-он настроения на фонде толкают крипту вверх. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Относитесь к трейдингу как к бизнесу, а не как к казино. Стабильность приходит только через системный подход и учет расходов (убытков).",
-    "💡 *Урок дня:* Выход сильных макроэкономических данных (CPI, ФРС) часто вызывает «вертолеты» на графике. Безопаснее переждать волатильность вне рынка. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Премиум и Дискаунт зоны помогают оценить, насколько дорого или дешево стоит актив внутри текущего импульса.",
-    "💡 *Урок дня:* Если вы не понимаете, что происходит на графике — закройте терминал. Нахождение «вне рынка» — это тоже профессиональная позиция. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Паттерны «Голова и плечи» или «Двойная вершина» работают только на вершине затяжного тренда, а не в случайном месте графика.",
-    "💡 *Урок дня:* Защита лимитных ордеров крупным игроком оставляет на графике так называемые «спонсированные свечи». Они служат отличной опорой для входа. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Лосс — это плата за урок от рынка. Не занимайтесь самобичеванием. Проанализируйте ошибку и спокойно двигайтесь дальше.",
-    "💡 *Урок дня:* Трейлинг-стоп — инструмент для того, чтобы дать прибыли течь. Подтягивайте стоп за локальные экстремумы по мере развития тренда. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Опционные уровни и открытый интерес (OI) дают понимание того, где маркетмейкеру выгодно экспирировать контракты (точка Max Pain).",
-    "💡 *Урок дня:* Не копируйте чужие сделки вслепую. То, что подходит трейдеру с депозитом $100k, легко уничтожит ваш счет из-за разной допустимой просадки. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Входя в сделку, вы должны точно знать, где выйдете. Точка фиксации прибыли (Тейк-профит) определяется строго до открытия ордера.",
-    "💡 *Урок дня:* Анализируйте кластерные графики (Footprint), чтобы увидеть рыночные ордера внутри свечи. Это покажет реальную агрессию покупателей или продавцов. Получить книгу по ссылке [https://lp.sbfconsult.com/edu](https://lp.sbfconsult.com/edu)",
-    "💡 *Урок дня:* Здоровый сон и физическая активность напрямую влияют на ваш PnL. Уставший мозг принимает катастрофические финансовые решения.",
-    "💡 *Урок дня:* Избегайте торговли кросс-курсами без понимания мажоров. Любой кросс — это всегда производная от двух основных пар с долларом. Получить консультацию по ссылке [https://t.me/SBF_Support](https://t.me/SBF_Support)",
-    "💡 *Урок дня:* Изучайте механику сведения ордеров (matching engine). Понимание того, как рыночные заявки поглощают лимитные, изменит ваш взгляд на график навсегда."
-]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -585,7 +559,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = get_display_name(user.id, user.first_name)
         await update.message.reply_text(
             f"👋 С возвращением, *{name}*!\n\n{BRAND_TAGLINE}",
-            reply_markup=main_menu_keyboard(), parse_mode="Markdown"
+            reply_markup=main_reply_keyboard(), parse_mode="Markdown"
         )
         return ConversationHandler.END
 
@@ -609,7 +583,7 @@ async def onboard_q1(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = get_display_name(query.from_user.id, query.from_user.first_name)
         await query.message.reply_text(
             f"✅ Добро пожаловать, *{name}*!\n\n{BRAND_TAGLINE}",
-            parse_mode="Markdown", reply_markup=main_menu_keyboard()
+            parse_mode="Markdown", reply_markup=main_reply_keyboard()
         )
         return ConversationHandler.END
     await query.message.reply_text(
@@ -724,7 +698,7 @@ async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_action_in_db(user.id, "menu")
     await update.message.reply_text(
         f"👋 *{name}*, выберите раздел:\n\n{BRAND_TAGLINE}",
-        reply_markup=main_menu_keyboard(), parse_mode="Markdown"
+        reply_markup=main_reply_keyboard(), parse_mode="Markdown"
     )
 
 async def checksub_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -949,6 +923,122 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         log_action_in_db(user.id, "menu_button")
         await menu_command(update, context)
         return
+
+    # ── диспатч кнопок персистентной клавиатуры ────────────────────────────────
+    text = update.message.text or ""
+    name = get_display_name(user.id, user.first_name)
+
+    if text == "📊 Обзор рынка":
+        log_action_in_db(user.id, "briefing_btn")
+        from datetime import timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        try:
+            from sbfacademy.briefing import store, render
+            briefing = store.get_for_user(user.id, today)
+            if briefing:
+                await update.message.reply_text(render.render_push(briefing), parse_mode="HTML")
+            else:
+                await update.message.reply_text(
+                    f"📊 Утренний обзор за {today} ещё не готов — публикуется после 10:00 UTC.\nПроверьте позже 🕙")
+        except Exception as e:
+            logger.error(f"briefing_btn error: {e}")
+            await update.message.reply_text("📊 Обзор временно недоступен. Попробуйте позже.")
+        return
+
+    if text == "📚 Образование":
+        log_action_in_db(user.id, "btn_edu")
+        update_user_in_db(user.id, funnel_stage="interest", section_interest="education")
+        await update.message.reply_text("📚 *Образовательные материалы*", parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📖 Книги",            callback_data="books")],
+                [InlineKeyboardButton("🎬 Видеоуроки",       callback_data="videos")],
+                [InlineKeyboardButton("🧠 Викторина",        callback_data="quiz_menu")],
+                [InlineKeyboardButton("📖 Словарь трейдера", callback_data="glossary")],
+                [InlineKeyboardButton("🌐 Обучающая платформа", url="https://lp.sbfconsult.com/edu/")],
+            ]))
+        return
+
+    if text == "🏦 Брокеры":
+        log_action_in_db(user.id, "btn_brokers")
+        update_user_in_db(user.id, funnel_stage="consideration", section_interest="brokers")
+        await update.message.reply_text(
+            "🏦 *Наши брокеры-партнёры*\n\nВсе проверены командой SBF Academy:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("AvaTrade",          callback_data="broker_avatrade")],
+                [InlineKeyboardButton("Daoti",             callback_data="broker_daoti")],
+                [InlineKeyboardButton("FxPro",             callback_data="broker_fxpro")],
+                [InlineKeyboardButton("Capex",             callback_data="broker_capex")],
+                [InlineKeyboardButton("Instaforex",        callback_data="broker_instaforex")],
+                [InlineKeyboardButton("Alpari",            callback_data="broker_alpari")],
+                [InlineKeyboardButton("⚖️ Сравнить всех", callback_data="brokers_compare")],
+            ]))
+        return
+
+    if text == "🔢 Калькулятор риска":
+        log_action_in_db(user.id, "btn_riskcalc")
+        context.user_data["calc_step"] = "deposit"
+        await update.message.reply_text(
+            "🔢 *Калькулятор риска*\n\n"
+            "Помогу рассчитать оптимальный объём сделки.\n\n"
+            "💰 Введите размер вашего депозита в USD:",
+            parse_mode="Markdown")
+        return
+
+    if text == "📖 Словарь":
+        log_action_in_db(user.id, "btn_glossary")
+        context.user_data["glossary_mode"] = True
+        await update.message.reply_text(
+            "📖 *Словарь трейдера*\n\nВведите термин — получите определение.\n\n"
+            "Примеры: *акция*, *спред*, *маржа*, *фьючерс*, *стоп-лосс*",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📋 Все термины", callback_data="glossary_list")],
+            ]))
+        return
+
+    if text == "📡 Каналы":
+        log_action_in_db(user.id, "btn_channels")
+        update_user_in_db(user.id, funnel_stage="interest", section_interest="channels")
+        await update.message.reply_text("📡 *Наши каналы:*", parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📰 SBFEconomics (новости)", url=NEWS_CHANNEL)],
+                [InlineKeyboardButton("💬 SBF Support",           url=SUPPORT_LINK)],
+                [InlineKeyboardButton("🌐 Сайт SBF Consult",      url=WEBSITE)],
+            ]))
+        return
+
+    if text == "🏢 О нас":
+        log_action_in_db(user.id, "btn_about")
+        await update.message.reply_text(
+            "🏢 *SBF Consult*\n\n"
+            "Мы — команда профессиональных трейдеров и аналитиков.\n\n"
+            "✅ Более 5 лет на рынке\n"
+            "✅ Работаем с рынками KZ и ZA\n"
+            "✅ Ежедневный утренний обзор для клиентов\n"
+            "✅ Сопровождение торгового счёта\n\n"
+            f"🌐 {WEBSITE}",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💬 Написать менеджеру", url=SUPPORT_LINK)],
+                [InlineKeyboardButton("📊 Результаты торговли", callback_data="performance_hook")],
+            ]))
+        return
+
+    if text == "❓ FAQ":
+        log_action_in_db(user.id, "btn_faq")
+        await update.message.reply_text(
+            "❓ *Часто задаваемые вопросы*\n\nВыберите интересующий вас вопрос:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("💰 Сколько стоит обучение?",     callback_data="faq_price")],
+                [InlineKeyboardButton("🎓 Нужен ли опыт?",              callback_data="faq_noexp")],
+                [InlineKeyboardButton("⏱ Сколько времени нужно?",       callback_data="faq_timing")],
+                [InlineKeyboardButton("🔒 Безопасно ли это?",            callback_data="faq_safety")],
+                [InlineKeyboardButton("💵 Минимальная сумма?",           callback_data="faq_minsum")],
+            ]))
+        return
+    # ── конец диспатча кнопок ─────────────────────────────────────────────────
 
     # Режим глоссария
     if context.user_data.get("glossary_mode"):
@@ -1212,7 +1302,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(
                 f"✅ Отлично, *{name}*! Подписка подтверждена.\n\n{BRAND_TAGLINE}",
                 parse_mode="Markdown",
-                reply_markup=main_menu_keyboard()
+                reply_markup=main_reply_keyboard()
             )
         else:
             await query.message.reply_text(
@@ -1280,7 +1370,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ── Главное меню и общие разделы ────────────────────────────────────────
     elif data == "main_menu":
         await query.message.reply_text(f"👋 *{name}*, выберите раздел:\n\n{BRAND_TAGLINE}",
-                                       reply_markup=main_menu_keyboard(), parse_mode="Markdown")
+                                       reply_markup=main_reply_keyboard(), parse_mode="Markdown")
 
     elif data == "edu_materials":
         update_user_in_db(user.id, funnel_stage="interest", section_interest="education")
@@ -1677,20 +1767,8 @@ async def answer_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# FOLLOW-UP / УРОК ДНЯ
+# FOLLOW-UP
 # ──────────────────────────────────────────────────────────────────────────────
-async def send_daily_lesson(context):
-    conn = sqlite3.connect("bot.db")
-    ids = [r[0] for r in conn.execute("SELECT user_id FROM users WHERE is_subscribed=1").fetchall()]
-    conn.close()
-    lesson = random.choice(DAILY_LESSONS)
-    for uid in ids:
-        try:
-            await context.bot.send_message(uid,
-                f"{lesson}\n\n📖 Словарь трейдера: /menu → Словарь\n_{BRAND_TAGLINE}_",
-                parse_mode="Markdown")
-        except: pass
-
 async def send_followup_24h(context):
     threshold = (datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
     conn = sqlite3.connect("bot.db")
@@ -1887,11 +1965,34 @@ async def broadcast_media_handler(update: Update, context: ContextTypes.DEFAULT_
     context.args = parts[1].split() if len(parts) > 1 else []
     await broadcast_command(update, context)
 
+async def post_init(app: Application) -> None:
+    """Вызывается один раз при старте: задаём команды и кнопку меню бота."""
+    try:
+        await app.bot.set_my_commands([
+            BotCommand("start", "Начать / главное меню"),
+            BotCommand("menu",  "Открыть разделы бота"),
+        ])
+        # Кнопка-гамбургер слева от поля ввода → открывает Mini App
+        await app.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="Открыть приложение",
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            )
+        )
+        logger.info("post_init OK: commands + menu button set")
+    except Exception as e:
+        logger.warning(f"post_init setup error (non-fatal): {e}")
+
+
 def main():
     global app_telegram
     init_db()
 
-    app_telegram = Application.builder().token(BOT_TOKEN).build()
+    # ── инициализация нового модуля ──────────────────────────────────────────
+    from sbfacademy.core import db as new_db
+    new_db.init_db()  # создаёт briefings/watchlist/delivery_log + новые колонки users
+
+    app_telegram = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
 
     onboard_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -1920,8 +2021,30 @@ def main():
     app_telegram.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND | filters.CONTACT, handle_message))
 
     jq = app_telegram.job_queue
-    from datetime import time as dtime
-    jq.run_daily(send_daily_lesson,  time=dtime(9, 0))
+    from datetime import time as dtime, datetime as _dt, timezone as _tz
+    from sbfacademy.core import db as _db
+    from sbfacademy.core.config import BRIEFING_INGEST_HOUR, BRIEFING_INGEST_MINUTE
+    from sbfacademy.bot.push import ingest_job, send_briefing
+
+    # ingest: запускается ежедневно в UTC 10:15 после батча market_intel
+    jq.run_daily(ingest_job, time=dtime(BRIEFING_INGEST_HOUR, BRIEFING_INGEST_MINUTE))
+
+    # SPEC_tg_morning_brief_v2.md §0.4: run_daily вычисляет следующее срабатывание
+    # от текущего момента при регистрации джобы. Рестарт ПОСЛЕ 10:15 UTC молча
+    # переносит ingest_job на завтра -- целый день без обзора. Разовый
+    # догоняющий запуск, если за сегодня брифинга ещё нет.
+    _now = _dt.now(_tz.utc)
+    if (_now.hour, _now.minute) >= (BRIEFING_INGEST_HOUR, BRIEFING_INGEST_MINUTE):
+        if _db.get_briefing(_now.strftime("%Y-%m-%d"), "global") is None:
+            jq.run_once(ingest_job, when=5)
+
+    # send_briefing: каждые 5 минут проверяет кому пора слать. `first` раньше
+    # был константой 30 -- фаза тиков (:00,:05,:10 UTC или :03,:08,:13 --
+    # зависит от момента рестарта бота) "уезжала" при каждом перезапуске.
+    # Теперь тики всегда выровнены по часам, независимо от времени старта.
+    _first_delay = 300 - (_now.minute % 5 * 60 + _now.second)
+    jq.run_repeating(send_briefing, interval=300, first=_first_delay)
+
     jq.run_repeating(send_followup_24h, interval=3600, first=60)
     jq.run_repeating(send_followup_3d,  interval=3600, first=120)
 

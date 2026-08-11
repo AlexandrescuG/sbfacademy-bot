@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="patterns.page_title">SBF — Риск-калькулятор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF6EF; --surface:#FFFFFF; --surface2:#FCFAF5;
+    --ink:#2B2B33; --muted:#7C7563; --gold:#C9A227; --gold-soft:#E9D9A6;
+    --border:#E7DFCF; --up:#2E8B6F; --down:#C0504D; --radius:12px;
+    --font:"Montserrat",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 64px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  h1{font-size:26px;font-weight:800;margin:6px 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;max-width:64ch}
+  h2{font-size:18px;font-weight:700;margin:40px 0 4px;display:flex;align-items:baseline;gap:10px}
+  h2 .n{font-size:12px;color:var(--gold);font-weight:700}
+  .sectsub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .calc{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(286px,1fr));margin-top:18px}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+  .panel h3{margin:0 0 2px;font-size:15px;font-weight:700}
+  .panel .ph{color:var(--muted);font-size:12px;margin-bottom:12px}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .field input,.field select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--surface2)}
+  .field input:focus,.field select:focus{outline:2px solid var(--gold-soft);outline-offset:1px;border-color:var(--gold)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .out{border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+  .out .o{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .out .o .k{font-size:12.5px;color:var(--muted)}
+  .out .o .v{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .v.pos{color:var(--up)} .v.neg{color:var(--down)} .v.gold{color:var(--gold)}
+  .verdict{font-size:12.5px;padding:8px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border)}
+  .seg{display:flex;gap:6px;margin-bottom:10px}
+  .seg button{flex:1;padding:7px;border:1px solid var(--border);background:var(--surface2);border-radius:8px;font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .seg button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  footer{margin-top:40px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow" data-i18n="patterns.eyebrow">SBF Academy · справочник</div>
+  <h1 data-i18n="tool.patterns.name">Риск-калькулятор</h1>
+  <p class="sub" data-i18n="patterns.sub">Считает риск на сделку, размер позиции, R-мультипликатор, ожидание системы и просадку. Образец, не сигналы. Свечные и графические паттерны — во вкладке «График».</p>
+
+  <h2><span class="n">5</span> <span data-i18n="tool.patterns.name">Риск-калькулятор</span></h2>
+  <div class="sectsub" data-i18n="patterns.section_sub">Считается вживую. Меняй любое поле.</div>
+  <div class="calc">
+    <div class="panel">
+      <h3 data-i18n="patterns.panel1_title">Позиция и риск</h3>
+      <div class="ph" data-i18n="patterns.panel1_sub">Размер сделки от принятого риска</div>
+      <div class="field"><label data-i18n="patterns.label_capital">Капитал ($)</label><input id="cap" type="number" value="10000" step="100"></div>
+      <div class="field"><label data-i18n="patterns.label_risk_pct">Риск на сделку (%)</label><input id="rsk" type="number" value="1" step="0.1"></div>
+      <div class="row2">
+        <div class="field"><label data-i18n="patterns.label_entry">Вход</label><input id="entry" type="number" value="100" step="0.01"></div>
+        <div class="field"><label data-i18n="patterns.label_stop">Стоп-лосс</label><input id="stop" type="number" value="96" step="0.01"></div>
+      </div>
+      <div class="field"><label data-i18n="patterns.label_target">Тейк-профит (опционально)</label><input id="target" type="number" value="112" step="0.01"></div>
+      <div class="out" id="posOut"></div>
+    </div>
+    <div class="panel">
+      <h3 data-i18n="patterns.panel2_title">Ожидание системы</h3>
+      <div class="ph" data-i18n="patterns.panel2_sub">Средний результат на сделку, в R</div>
+      <div class="field"><label data-i18n="patterns.label_winrate">Винрейт (%)</label><input id="wr" type="number" value="45" step="1"></div>
+      <div class="row2">
+        <div class="field"><label data-i18n="patterns.label_avg_win">Средний выигрыш (R)</label><input id="aw" type="number" value="2" step="0.1"></div>
+        <div class="field"><label data-i18n="patterns.label_avg_loss">Средний проигрыш (R)</label><input id="al" type="number" value="1" step="0.1"></div>
+      </div>
+      <div class="out" id="expOut"></div>
+      <div class="verdict" id="expVerdict" style="margin-top:10px"></div>
+    </div>
+    <div class="panel">
+      <h3 data-i18n="patterns.panel3_title">Просадка</h3>
+      <div class="ph" data-i18n="patterns.panel3_sub">Снижение капитала и возврат</div>
+      <div class="seg">
+        <button id="ddTabA" class="active" type="button" data-i18n="patterns.tab_current">Текущая</button>
+        <button id="ddTabB" type="button" data-i18n="patterns.tab_streak">Серия убытков</button>
+      </div>
+      <div id="ddA">
+        <div class="row2">
+          <div class="field"><label data-i18n="patterns.label_peak">Пик капитала</label><input id="peak" type="number" value="12000" step="100"></div>
+          <div class="field"><label data-i18n="patterns.label_current_cap">Текущий</label><input id="cur" type="number" value="9600" step="100"></div>
+        </div>
+      </div>
+      <div id="ddB" style="display:none">
+        <div class="row2">
+          <div class="field"><label data-i18n="patterns.label_dd_risk">Риск/сделку (%)</label><input id="ddRisk" type="number" value="2" step="0.1"></div>
+          <div class="field"><label data-i18n="patterns.label_dd_n">Убытков подряд</label><input id="ddN" type="number" value="8" step="1"></div>
+        </div>
+      </div>
+      <div class="out" id="ddOut"></div>
+    </div>
+  </div>
+
+  <footer data-i18n="patterns.footer">Схемы и калькуляторы — образовательные: показывают, как читать фигуры и считать риск. Не являются торговой рекомендацией. SBF Company SRL.</footer>
+</div>
+
+<script src="i18n.js?v=1"></script>
+<script>
+/* ===== calculator ===== */
+var $=function(id){return document.getElementById(id);};
+var T=window.sbfI18n.t;
+var _numLocale=window.sbfI18n.lang==='ro'?'ro-RO':'ru-RU';
+function money(x){return (x<0?'-$':'$')+Math.abs(x).toLocaleString(_numLocale,{maximumFractionDigits:2});}
+function num(x,d){return Number(x).toLocaleString(_numLocale,{maximumFractionDigits:d==null?2:d});}
+function o(k,v,cls){return '<div class="o"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>';}
+function calcPos(){
+  var cap=+$('cap').value,rsk=+$('rsk').value,entry=+$('entry').value,stop=+$('stop').value,target=+$('target').value;
+  var riskAmt=cap*rsk/100,perUnit=Math.abs(entry-stop),size=perUnit>0?riskAmt/perUnit:0;
+  var html=o(T('patterns.out_risk','Риск на сделку'),money(riskAmt),'gold')+o(T('patterns.out_position_size','Размер позиции'),num(size,2)+T('patterns.unit_suffix',' ед.'))+o(T('patterns.out_position_value','Стоимость позиции'),money(size*entry));
+  if(target&&perUnit>0){var rr=Math.abs(target-entry)/perUnit,profit=size*Math.abs(target-entry);
+    html+=o(T('patterns.out_rr','R-мультипликатор (R:R)'),'1 : '+num(rr,2),rr>=1?'pos':'neg')+o(T('patterns.out_potential_profit','Потенц. прибыль'),money(profit),'pos');}
+  $('posOut').innerHTML=html;
+}
+function calcExp(){
+  var wr=+$('wr').value/100,aw=+$('aw').value,al=+$('al').value,e=wr*aw-(1-wr)*al;
+  $('expOut').innerHTML=o(T('patterns.out_expectancy','Ожидание'),num(e,2)+T('patterns.per_trade_suffix',' R / сделку'),e>0?'pos':'neg')+o(T('patterns.out_per_100','На 100 сделок'),num(e*100,1)+T('patterns.r_suffix',' R'),e>0?'pos':'neg');
+  var v=$('expVerdict');
+  if(e>0){v.style.color='var(--up)';v.textContent=T('patterns.verdict_positive','Положительное ожидание: система в плюсе на дистанции при дисциплине.');}
+  else if(e===0){v.style.color='var(--muted)';v.textContent=T('patterns.verdict_zero','Нулевое ожидание: система в ноль до издержек.');}
+  else{v.style.color='var(--down)';v.textContent=T('patterns.verdict_negative','Отрицательное ожидание: на дистанции теряет. Пересмотри R или винрейт.');}
+}
+var ddMode='A';
+function calcDD(){
+  if(ddMode==='A'){var peak=+$('peak').value,cur=+$('cur').value;var dd=peak>0?(peak-cur)/peak*100:0,rec=cur>0?(peak/cur-1)*100:0;
+    $('ddOut').innerHTML=o(T('patterns.out_dd_from_peak','Просадка от пика'),num(dd,1)+'%',dd>0?'neg':'')+o(T('patterns.out_need_recover','Нужно для возврата'),'+'+num(rec,1)+'%','gold');}
+  else{var r=+$('ddRisk').value/100,n=+$('ddN').value,remain=Math.pow(1-r,n),ddp=(1-remain)*100,rec2=remain>0?(1/remain-1)*100:0;
+    $('ddOut').innerHTML=o(T('patterns.out_capital_left','Осталось капитала'),num(remain*100,1)+'%','neg')+o(T('patterns.out_dd_size','Размер просадки'),num(ddp,1)+'%','neg')+o(T('patterns.out_need_recover','Нужно для возврата'),'+'+num(rec2,1)+'%','gold');}
+}
+$('ddTabA').onclick=function(){ddMode='A';this.classList.add('active');$('ddTabB').classList.remove('active');$('ddA').style.display='';$('ddB').style.display='none';calcDD();};
+$('ddTabB').onclick=function(){ddMode='B';this.classList.add('active');$('ddTabA').classList.remove('active');$('ddB').style.display='';$('ddA').style.display='none';calcDD();};
+['cap','rsk','entry','stop','target'].forEach(function(id){$(id).addEventListener('input',calcPos);});
+['wr','aw','al'].forEach(function(id){$(id).addEventListener('input',calcExp);});
+['peak','cur','ddRisk','ddN'].forEach(function(id){$(id).addEventListener('input',calcDD);});
+calcPos();calcExp();calcDD();
+</script>
+</body>
+</html>
