@@ -1004,14 +1004,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("📰 SBFEconomics (новости)", url=NEWS_CHANNEL)],
                 [InlineKeyboardButton("💬 SBF Support",           url=SUPPORT_LINK)],
-                [InlineKeyboardButton("🌐 Сайт SBF Consult",      url=WEBSITE)],
+                [InlineKeyboardButton("🌐 Сайт SBF Company",      url=WEBSITE)],
             ]))
         return
 
     if text == "🏢 О нас":
         log_action_in_db(user.id, "btn_about")
         await update.message.reply_text(
-            "🏢 *SBF Consult*\n\n"
+            "🏢 *SBF Company*\n\n"
             "Мы — команда профессиональных трейдеров и аналитиков.\n\n"
             "✅ Более 5 лет на рынке\n"
             "✅ Работаем с рынками KZ и ZA\n"
@@ -1138,7 +1138,7 @@ async def send_performance_pdf(bot, chat_id: int) -> bool:
                 document=f,
                 filename="SBF_Performance_2025-2026.pdf",
                 caption=(
-                    "📊 *SBF Consult — Результаты торговли 2025–2026*\n\n"
+                    "📊 *SBF Company — Результаты торговли 2025–2026*\n\n"
                     "✔️ Win Rate: *92.58%*\n"
                     "✔️ Суммарная прибыль: *$25 861*\n"
                     "✔️ Сделок закрыто: *1 289*\n"
