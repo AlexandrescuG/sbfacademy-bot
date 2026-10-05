@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from telegram.error import BadRequest, Forbidden
 
+from sbfacademy.bot import fallback_quotes
 from sbfacademy.briefing import ingest, render, store
 from sbfacademy.core import db
 from sbfacademy.core.config import BRAND_TAGLINE, DEFAULT_TIMEZONE
@@ -19,12 +20,9 @@ except Exception:
 
 log = logging.getLogger("sbfacademy.bot.push")
 
-_FALLBACK = (
-    "📈 <b>Мысль дня</b>\n\n"
-    "«Диверсификация — единственный бесплатный обед в инвестировании.»\n"
-    "— Гарри Марковиц\n\n"
-    f"<i>{BRAND_TAGLINE}</i>"
-)
+# BRAND_TAGLINE написан в Markdown (*SBF Academy*), а запасное сообщение
+# уходит с parse_mode=HTML — звёздочки показывались буквально.
+_TAGLINE_HTML = BRAND_TAGLINE.replace("*SBF Academy*", "<b>SBF Academy</b>")
 
 
 async def ingest_job(context) -> None:
@@ -71,7 +69,8 @@ async def send_briefing(context) -> None:
             briefing = store.get_for_user(uid, today)
             if briefing is None:
                 if local_h >= 23:
-                    await context.bot.send_message(uid, _FALLBACK, parse_mode="HTML")
+                    await context.bot.send_message(
+                        uid, fallback_quotes.message(_TAGLINE_HTML, now_utc.date()), parse_mode="HTML")
                     db.mark_delivered(uid, today)
                     db.log_action(uid, "briefing_fallback", today)
                     fallback_sent += 1
